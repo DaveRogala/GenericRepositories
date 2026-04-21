@@ -67,11 +67,32 @@ All mutating methods (`AddAsync`, `Update`, `Delete`) only stage changes in the 
 | `Update(entity)` | Stages entity for update. |
 | `Delete(entity)` | Stages entity for deletion. |
 | `SaveChangesAsync(ct)` | Flushes staged changes; returns the row count written. |
-| `GetAsync(id, ct)` | Returns entity by primary key, or `null`. |
-| `AllAsync(ct)` | Returns all rows. Avoid on large tables. |
-| `AllAsync(skip, take, ct)` | Returns a page of rows. |
-| `FindAsync(predicate, ct)` | Returns all rows matching the LINQ predicate. |
-| `FindFirstAsync(predicate, ct)` | Returns the first matching row, or `null`. |
+| `GetAsync(id, ct)` | Returns entity by primary key, or `null`. Always uses the change tracker (see note below). |
+| `AllAsync(tracking, ct)` | Returns all rows. Avoid on large tables. |
+| `AllAsync(skip, take, tracking, ct)` | Returns a page of rows. |
+| `FindAsync(predicate, tracking, ct)` | Returns all rows matching the LINQ predicate. |
+| `FindFirstAsync(predicate, tracking, ct)` | Returns the first matching row, or `null`. |
+
+### Change tracking
+
+All read methods accept a `QueryTrackingBehavior` parameter (defaulting to `NoTracking`, which is the right choice for most ETL workloads):
+
+```csharp
+// Default — entities are detached, no overhead from the change tracker
+var orders = await repo.AllAsync();
+
+// Opt in to tracking when you intend to update the returned entities
+var order = await repo.FindFirstAsync(o => o.Id == id, QueryTrackingBehavior.TrackAll);
+order!.Status = "Processed";
+repo.Update(order);
+await repo.SaveChangesAsync();
+
+// NoTrackingWithIdentityResolution — no tracking but related entities
+// loaded from multiple queries are resolved to the same object instance
+var orders = await repo.FindAsync(o => o.CustomerId == id, QueryTrackingBehavior.NoTrackingWithIdentityResolution);
+```
+
+> **Note on `GetAsync`:** EF Core's `FindAsync` always checks the change tracker before querying the database. This is intentional — if the entity is already loaded it avoids a round-trip — but it means the `tracking` parameter is not available on `GetAsync`. If you need a guaranteed no-tracking lookup by key, use `FindFirstAsync` with a predicate on the key property instead.
 
 ## Extending a repository
 

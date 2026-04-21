@@ -61,11 +61,13 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IEnumerable<T>> AllAsync(CancellationToken ct = default)
+        public virtual async Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
         {
             try
             {
-                return await _context.Set<T>().ToListAsync(ct);
+                return await _context.Set<T>()
+                    .WithQueryTrackingBehavior(tracking)
+                    .ToListAsync(ct);
             }
             catch (Exception ex)
             {
@@ -75,11 +77,15 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IEnumerable<T>> AllAsync(int skip, int take, CancellationToken ct = default)
+        public virtual async Task<IEnumerable<T>> AllAsync(int skip, int take, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
         {
             try
             {
-                return await _context.Set<T>().Skip(skip).Take(take).ToListAsync(ct);
+                return await _context.Set<T>()
+                    .WithQueryTrackingBehavior(tracking)
+                    .Skip(skip)
+                    .Take(take)
+                    .ToListAsync(ct);
             }
             catch (Exception ex)
             {
@@ -89,11 +95,14 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
         {
             try
             {
-                return await _context.Set<T>().Where(predicate).ToListAsync(ct);
+                return await _context.Set<T>()
+                    .WithQueryTrackingBehavior(tracking)
+                    .Where(predicate)
+                    .ToListAsync(ct);
             }
             catch (Exception ex)
             {
@@ -103,11 +112,14 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
         {
             try
             {
-                return await _context.Set<T>().Where(predicate).FirstOrDefaultAsync(ct);
+                return await _context.Set<T>()
+                    .WithQueryTrackingBehavior(tracking)
+                    .Where(predicate)
+                    .FirstOrDefaultAsync(ct);
             }
             catch (Exception ex)
             {

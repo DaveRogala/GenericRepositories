@@ -225,6 +225,63 @@ namespace GenericRepositories.Tests
             Assert.Equal(entity.Id, result.Id);
         }
 
+        // --- Change tracking ---
+
+        [Fact]
+        public async Task AllAsync_NoTracking_EntitiesAreNotTracked()
+        {
+            await SeedAsync("A");
+
+            var results = await _repository.AllAsync(QueryTrackingBehavior.NoTracking);
+
+            Assert.All(results, e =>
+                Assert.Equal(EntityState.Detached, _context.Entry(e).State));
+        }
+
+        [Fact]
+        public async Task AllAsync_TrackAll_EntitiesAreTracked()
+        {
+            await SeedAsync("A");
+
+            var results = await _repository.AllAsync(QueryTrackingBehavior.TrackAll);
+
+            Assert.All(results, e =>
+                Assert.Equal(EntityState.Unchanged, _context.Entry(e).State));
+        }
+
+        [Fact]
+        public async Task FindAsync_NoTracking_EntitiesAreNotTracked()
+        {
+            await SeedAsync("Alpha");
+
+            var results = await _repository.FindAsync(e => e.Name == "Alpha", QueryTrackingBehavior.NoTracking);
+
+            Assert.All(results, e =>
+                Assert.Equal(EntityState.Detached, _context.Entry(e).State));
+        }
+
+        [Fact]
+        public async Task FindFirstAsync_NoTracking_EntityIsNotTracked()
+        {
+            await SeedAsync("Alpha");
+
+            var result = await _repository.FindFirstAsync(e => e.Name == "Alpha", QueryTrackingBehavior.NoTracking);
+
+            Assert.NotNull(result);
+            Assert.Equal(EntityState.Detached, _context.Entry(result).State);
+        }
+
+        [Fact]
+        public async Task FindFirstAsync_TrackAll_EntityIsTracked()
+        {
+            await SeedAsync("Alpha");
+
+            var result = await _repository.FindFirstAsync(e => e.Name == "Alpha", QueryTrackingBehavior.TrackAll);
+
+            Assert.NotNull(result);
+            Assert.Equal(EntityState.Unchanged, _context.Entry(result).State);
+        }
+
         // --- CancellationToken ---
 
         [Fact]
@@ -234,7 +291,7 @@ namespace GenericRepositories.Tests
             cts.Cancel();
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => _repository.AllAsync(cts.Token));
+                () => _repository.AllAsync(ct: cts.Token));
         }
 
         // --- Dispose ---

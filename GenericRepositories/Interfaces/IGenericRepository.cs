@@ -29,20 +29,44 @@ namespace GenericRepositories.Interfaces
         /// <returns>The tracked entity as returned by EF Core.</returns>
         T Delete(T entity);
 
-        /// <summary>Returns the entity with the given primary key, or <see langword="null"/> if not found.</summary>
+        /// <summary>
+        /// Returns the entity with the given primary key, or <see langword="null"/> if not found.
+        /// Uses EF Core's <c>FindAsync</c>, which always checks the change tracker before hitting
+        /// the database. Change-tracking behaviour cannot be controlled on this method.
+        /// </summary>
         Task<T?> GetAsync(TKey id, CancellationToken ct = default);
 
-        /// <summary>Returns every row in the entity's table. Avoid on large tables — prefer the paginated overload.</summary>
-        Task<IEnumerable<T>> AllAsync(CancellationToken ct = default);
+        /// <summary>
+        /// Returns every row in the entity's table. Avoid on large tables — prefer the paginated overload.
+        /// </summary>
+        /// <param name="tracking">
+        /// Controls whether returned entities are tracked by the change tracker.
+        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// </param>
+        Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
-        /// <summary>Returns a page of rows. <paramref name="skip"/> rows are bypassed before <paramref name="take"/> are returned.</summary>
-        Task<IEnumerable<T>> AllAsync(int skip, int take, CancellationToken ct = default);
+        /// <summary>
+        /// Returns a page of rows. <paramref name="skip"/> rows are bypassed before <paramref name="take"/> are returned.
+        /// </summary>
+        /// <param name="tracking">
+        /// Controls whether returned entities are tracked by the change tracker.
+        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// </param>
+        Task<IEnumerable<T>> AllAsync(int skip, int take, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
         /// <summary>Returns all entities that satisfy <paramref name="predicate"/>.</summary>
-        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        /// <param name="tracking">
+        /// Controls whether returned entities are tracked by the change tracker.
+        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// </param>
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
         /// <summary>Returns the first entity that satisfies <paramref name="predicate"/>, or <see langword="null"/> if none match.</summary>
-        Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        /// <param name="tracking">
+        /// Controls whether the returned entity is tracked by the change tracker.
+        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// </param>
+        Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
         /// <summary>Flushes all pending changes to the database.</summary>
         /// <returns>The number of rows written.</returns>
