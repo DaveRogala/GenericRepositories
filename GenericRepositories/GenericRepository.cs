@@ -5,15 +5,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GenericRepositories
 {
-    public abstract class GenericRepository<T, U> : IGenericRepository<T, U>
+    public abstract class GenericRepository<T, U, TKey> : IGenericRepository<T, U, TKey>
         where T : class
         where U : DbContext
+        where TKey : notnull
     {
         protected readonly U _context;
-        protected readonly ILogger<GenericRepository<T, U>> _logger;
+        protected readonly ILogger<GenericRepository<T, U, TKey>> _logger;
         private bool disposedValue;
 
-        protected GenericRepository(U context, ILogger<GenericRepository<T, U>> logger)
+        protected GenericRepository(U context, ILogger<GenericRepository<T, U, TKey>> logger)
         {
             _context = context;
             _logger = logger;
@@ -85,7 +86,7 @@ namespace GenericRepositories
             }
         }
 
-        public virtual async Task<T?> GetAsync(Guid id, CancellationToken ct = default)
+        public virtual async Task<T?> GetAsync(TKey id, CancellationToken ct = default)
         {
             try
             {

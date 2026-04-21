@@ -18,7 +18,7 @@ namespace GenericRepositories.Tests
             _context = new TestDbContext(options);
             _repository = new TestRepository(
                 _context,
-                NullLogger<GenericRepository<TestEntity, TestDbContext>>.Instance);
+                NullLogger<GenericRepository<TestEntity, TestDbContext, Guid>>.Instance);
         }
 
         // --- AddAsync ---
@@ -246,7 +246,7 @@ namespace GenericRepositories.Tests
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var ctx = new TestDbContext(options);
-            var repo = new TestRepository(ctx, NullLogger<GenericRepository<TestEntity, TestDbContext>>.Instance);
+            var repo = new TestRepository(ctx, NullLogger<GenericRepository<TestEntity, TestDbContext, Guid>>.Instance);
 
             var ex = Record.Exception(() => repo.Dispose());
 
@@ -265,6 +265,74 @@ namespace GenericRepositories.Tests
             foreach (var name in names)
                 await _repository.AddAsync(new TestEntity { Id = Guid.NewGuid(), Name = name });
             await _repository.SaveChangesAsync();
+        }
+    }
+
+    public class IntKeyRepositoryTests : IDisposable
+    {
+        private readonly IntTestDbContext _context;
+        private readonly IntTestRepository _repository;
+
+        public IntKeyRepositoryTests()
+        {
+            var options = new DbContextOptionsBuilder<IntTestDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+
+            _context = new IntTestDbContext(options);
+            _repository = new IntTestRepository(
+                _context,
+                NullLogger<GenericRepository<IntTestEntity, IntTestDbContext, int>>.Instance);
+        }
+
+        [Fact]
+        public async Task GetAsync_Int_ReturnsEntityById()
+        {
+            var entity = new IntTestEntity { Id = 1, Name = "Target" };
+            await _repository.AddAsync(entity);
+            await _repository.SaveChangesAsync();
+
+            var result = await _repository.GetAsync(1);
+
+            Assert.NotNull(result);
+            Assert.Equal(1, result.Id);
+        }
+
+        [Fact]
+        public async Task GetAsync_Int_ReturnsNullForUnknownId()
+        {
+            var result = await _repository.GetAsync(99);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task AddAsync_Int_EntityIsPersistableAfterSave()
+        {
+            var entity = new IntTestEntity { Id = 42, Name = "Answer" };
+            await _repository.AddAsync(entity);
+            await _repository.SaveChangesAsync();
+
+            var stored = await _context.IntTestEntities.FindAsync(42);
+            Assert.NotNull(stored);
+            Assert.Equal("Answer", stored.Name);
+        }
+
+        [Fact]
+        public async Task FindAsync_Int_ReturnsMatchingEntities()
+        {
+            await _repository.AddAsync(new IntTestEntity { Id = 1, Name = "Alpha" });
+            await _repository.AddAsync(new IntTestEntity { Id = 2, Name = "Beta" });
+            await _repository.SaveChangesAsync();
+
+            var result = await _repository.FindAsync(e => e.Name == "Alpha");
+
+            Assert.Single(result);
+        }
+
+        public void Dispose()
+        {
+            _repository.Dispose();
         }
     }
 }
