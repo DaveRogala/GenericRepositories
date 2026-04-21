@@ -41,9 +41,9 @@ namespace GenericRepositories.Interfaces
         /// </summary>
         /// <param name="tracking">
         /// Controls whether returned entities are tracked by the change tracker.
-        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// Defaults to <see cref="QueryTrackingBehavior.TrackAll"/>.
         /// </param>
-        Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
+        Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default);
 
         /// <summary>
         /// Returns a page of rows. <paramref name="skip"/> rows are bypassed before <paramref name="take"/> are returned.
@@ -55,16 +55,16 @@ namespace GenericRepositories.Interfaces
         /// </param>
         /// <param name="tracking">
         /// Controls whether returned entities are tracked by the change tracker.
-        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// Defaults to <see cref="QueryTrackingBehavior.TrackAll"/>.
         /// </param>
-        Task<IEnumerable<T>> AllAsync(int skip, int take, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
+        Task<IEnumerable<T>> AllAsync(int skip, int take, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default);
 
         /// <summary>Returns all entities that satisfy <paramref name="predicate"/>.</summary>
         /// <param name="tracking">
         /// Controls whether returned entities are tracked by the change tracker.
-        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// Defaults to <see cref="QueryTrackingBehavior.TrackAll"/>.
         /// </param>
-        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default);
 
         /// <summary>
         /// Returns the first entity that satisfies <paramref name="predicate"/> in the order defined by
@@ -76,9 +76,9 @@ namespace GenericRepositories.Interfaces
         /// </param>
         /// <param name="tracking">
         /// Controls whether the returned entity is tracked by the change tracker.
-        /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
+        /// Defaults to <see cref="QueryTrackingBehavior.TrackAll"/>.
         /// </param>
-        Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
+        Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default);
 
         /// <summary>Flushes all pending changes to the database.</summary>
         /// <returns>The number of rows written.</returns>

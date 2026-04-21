@@ -95,14 +95,11 @@ var page = await repo.AllAsync(skip: 0, take: 50, q => q.OrderByDescending(e => 
 All read methods accept a `QueryTrackingBehavior` parameter (defaulting to `NoTracking`, which is the right choice for most ETL workloads):
 
 ```csharp
-// Default — entities are detached, no overhead from the change tracker
+// Default — entities are tracked, matching EF Core's own default
 var orders = await repo.AllAsync();
 
-// Opt in to tracking when you intend to update the returned entities
-var order = await repo.FindFirstAsync(o => o.Id == id, q => q.OrderBy(o => o.CreatedAt), QueryTrackingBehavior.TrackAll);
-order!.Status = "Processed";
-repo.Update(order);
-await repo.SaveChangesAsync();
+// Opt out of tracking for read-only or ETL workloads to reduce overhead
+var orders = await repo.AllAsync(QueryTrackingBehavior.NoTracking);
 
 // NoTrackingWithIdentityResolution — no tracking but related entities
 // loaded from multiple queries are resolved to the same object instance

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [10.1.1] - 2026-04-21
+
+### Changed
+
+- **Default `QueryTrackingBehavior` changed from `NoTracking` to `TrackAll`** on all read methods (`AllAsync`, `FindAsync`, `FindFirstAsync`). This aligns with EF Core's own default and avoids surprising consumers who expect returned entities to be tracked. Pass `QueryTrackingBehavior.NoTracking` explicitly for read-only or ETL workloads where tracking overhead is unwanted.
+
+> **Breaking change:** Any code relying on entities being detached by default must now pass `QueryTrackingBehavior.NoTracking` explicitly.
+
+---
+
 ## [10.1.0] - 2026-04-21
 
 This release is a significant overhaul of the library. Several **breaking changes** are present — see the migration guide at the bottom of this section before upgrading.
@@ -37,7 +47,7 @@ Task<T?> GetAsync(TKey id, CancellationToken ct = default);
 
 #### All read methods now accept `QueryTrackingBehavior` instead of no tracking control
 
-A `QueryTrackingBehavior tracking` parameter has been added to `AllAsync`, `FindAsync`, and `FindFirstAsync`. The default is `QueryTrackingBehavior.NoTracking`. Callers that relied on EF Core's default tracking behaviour (track all) must now pass `QueryTrackingBehavior.TrackAll` explicitly.
+A `QueryTrackingBehavior tracking` parameter has been added to `AllAsync`, `FindAsync`, and `FindFirstAsync`. The default is `QueryTrackingBehavior.TrackAll`, matching EF Core's own default. Pass `QueryTrackingBehavior.NoTracking` explicitly for read-only ETL workloads where tracking overhead is unwanted.
 
 ```csharp
 // Before — entities were tracked by default

@@ -61,7 +61,7 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
+        public virtual async Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IEnumerable<T>> AllAsync(int skip, int take, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
+        public virtual async Task<IEnumerable<T>> AllAsync(int skip, int take, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
@@ -89,7 +89,7 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace GenericRepositories
         }
 
         /// <inheritdoc/>
-        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default)
+        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
