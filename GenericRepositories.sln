@@ -5,6 +5,8 @@ VisualStudioVersion = 18.0.11205.157 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenericRepositories", "GenericRepositories\GenericRepositories.csproj", "{4B68B2BB-51D6-4FDF-880B-6622A4612C62}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenericRepositories.Tests", "GenericRepositories.Tests\GenericRepositories.Tests.csproj", "{C3D4E5F6-A7B8-4C9D-0E1F-2A3B4C5D6E7F}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6F188F35-3FBA-4FD0-BEA7-8795AFE1DA88}"
 	ProjectSection(SolutionItems) = preProject
 		.gitlab-ci.yml = .gitlab-ci.yml
@@ -20,6 +22,10 @@ Global
 		{4B68B2BB-51D6-4FDF-880B-6622A4612C62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4B68B2BB-51D6-4FDF-880B-6622A4612C62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4B68B2BB-51D6-4FDF-880B-6622A4612C62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-2A3B4C5D6E7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-2A3B4C5D6E7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-2A3B4C5D6E7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4E5F6-A7B8-4C9D-0E1F-2A3B4C5D6E7F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
