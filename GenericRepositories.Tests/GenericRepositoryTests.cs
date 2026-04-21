@@ -72,9 +72,29 @@ namespace GenericRepositories.Tests
         {
             await SeedAsync("A", "B", "C", "D", "E");
 
-            var page = await _repository.AllAsync(skip: 2, take: 2);
+            var page = await _repository.AllAsync(skip: 2, take: 2, q => q.OrderBy(e => e.Name));
 
             Assert.Equal(2, page.Count());
+        }
+
+        [Fact]
+        public async Task AllAsync_Paginated_RespectsOrderBy()
+        {
+            await SeedAsync("Bravo", "Alpha", "Charlie");
+
+            var page = await _repository.AllAsync(skip: 0, take: 3, q => q.OrderBy(e => e.Name));
+
+            Assert.Equal(new[] { "Alpha", "Bravo", "Charlie" }, page.Select(e => e.Name));
+        }
+
+        [Fact]
+        public async Task AllAsync_Paginated_RespectsOrderByDescending()
+        {
+            await SeedAsync("Bravo", "Alpha", "Charlie");
+
+            var page = await _repository.AllAsync(skip: 0, take: 2, q => q.OrderByDescending(e => e.Name));
+
+            Assert.Equal(new[] { "Charlie", "Bravo" }, page.Select(e => e.Name));
         }
 
         [Fact]
@@ -82,7 +102,7 @@ namespace GenericRepositories.Tests
         {
             await SeedAsync("A", "B");
 
-            var page = await _repository.AllAsync(skip: 10, take: 5);
+            var page = await _repository.AllAsync(skip: 10, take: 5, q => q.OrderBy(e => e.Name));
 
             Assert.Empty(page);
         }
@@ -112,13 +132,27 @@ namespace GenericRepositories.Tests
         // --- FindFirstAsync ---
 
         [Fact]
-        public async Task FindFirstAsync_ReturnsFirstMatch()
+        public async Task FindFirstAsync_ReturnsFirstMatchByOrder()
         {
-            await SeedAsync("Alpha", "Alphabet");
+            await SeedAsync("Alphabet", "Alpha", "Alpaca");
 
-            var result = await _repository.FindFirstAsync(e => e.Name.StartsWith("Alpha"));
+            var result = await _repository.FindFirstAsync(
+                e => e.Name.StartsWith("Alpha"),
+                q => q.OrderBy(e => e.Name));
 
-            Assert.NotNull(result);
+            Assert.Equal("Alpha", result?.Name);
+        }
+
+        [Fact]
+        public async Task FindFirstAsync_ReturnsFirstMatchByDescendingOrder()
+        {
+            await SeedAsync("Alpha", "Alpaca", "Alphabet");
+
+            var result = await _repository.FindFirstAsync(
+                e => e.Name.StartsWith("Alpha"),
+                q => q.OrderByDescending(e => e.Name));
+
+            Assert.Equal("Alphabet", result?.Name);
         }
 
         [Fact]
@@ -126,7 +160,9 @@ namespace GenericRepositories.Tests
         {
             await SeedAsync("Alpha");
 
-            var result = await _repository.FindFirstAsync(e => e.Name == "Nonexistent");
+            var result = await _repository.FindFirstAsync(
+                e => e.Name == "Nonexistent",
+                q => q.OrderBy(e => e.Name));
 
             Assert.Null(result);
         }
@@ -265,7 +301,7 @@ namespace GenericRepositories.Tests
         {
             await SeedAsync("Alpha");
 
-            var result = await _repository.FindFirstAsync(e => e.Name == "Alpha", QueryTrackingBehavior.NoTracking);
+            var result = await _repository.FindFirstAsync(e => e.Name == "Alpha", q => q.OrderBy(e => e.Name), QueryTrackingBehavior.NoTracking);
 
             Assert.NotNull(result);
             Assert.Equal(EntityState.Detached, _context.Entry(result).State);
@@ -276,7 +312,7 @@ namespace GenericRepositories.Tests
         {
             await SeedAsync("Alpha");
 
-            var result = await _repository.FindFirstAsync(e => e.Name == "Alpha", QueryTrackingBehavior.TrackAll);
+            var result = await _repository.FindFirstAsync(e => e.Name == "Alpha", q => q.OrderBy(e => e.Name), QueryTrackingBehavior.TrackAll);
 
             Assert.NotNull(result);
             Assert.Equal(EntityState.Unchanged, _context.Entry(result).State);

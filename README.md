@@ -69,9 +69,26 @@ All mutating methods (`AddAsync`, `Update`, `Delete`) only stage changes in the 
 | `SaveChangesAsync(ct)` | Flushes staged changes; returns the row count written. |
 | `GetAsync(id, ct)` | Returns entity by primary key, or `null`. Always uses the change tracker (see note below). |
 | `AllAsync(tracking, ct)` | Returns all rows. Avoid on large tables. |
-| `AllAsync(skip, take, tracking, ct)` | Returns a page of rows. |
+| `AllAsync(skip, take, orderBy, tracking, ct)` | Returns a page of rows in the specified order. |
 | `FindAsync(predicate, tracking, ct)` | Returns all rows matching the LINQ predicate. |
-| `FindFirstAsync(predicate, tracking, ct)` | Returns the first matching row, or `null`. |
+| `FindFirstAsync(predicate, orderBy, tracking, ct)` | Returns the first matching row in the specified order, or `null`. |
+
+### Ordering
+
+The `orderBy` parameter accepts a function that applies any combination of `OrderBy`, `OrderByDescending`, `ThenBy`, and `ThenByDescending`:
+
+```csharp
+// Single key, ascending
+var page = await repo.AllAsync(skip: 0, take: 50, q => q.OrderBy(e => e.Name));
+
+// Single key, descending
+var latest = await repo.FindFirstAsync(e => e.IsActive, q => q.OrderByDescending(e => e.CreatedAt));
+
+// Multi-key
+var page = await repo.AllAsync(skip: 0, take: 50, q => q.OrderByDescending(e => e.Date).ThenBy(e => e.Id));
+```
+
+`orderBy` is required on `AllAsync(skip, take, ...)` and `FindFirstAsync` — pagination and "first" queries over an unordered set produce non-deterministic results.
 
 ### Change tracking
 
@@ -82,7 +99,7 @@ All read methods accept a `QueryTrackingBehavior` parameter (defaulting to `NoTr
 var orders = await repo.AllAsync();
 
 // Opt in to tracking when you intend to update the returned entities
-var order = await repo.FindFirstAsync(o => o.Id == id, QueryTrackingBehavior.TrackAll);
+var order = await repo.FindFirstAsync(o => o.Id == id, q => q.OrderBy(o => o.CreatedAt), QueryTrackingBehavior.TrackAll);
 order!.Status = "Processed";
 repo.Update(order);
 await repo.SaveChangesAsync();

@@ -47,12 +47,17 @@ namespace GenericRepositories.Interfaces
 
         /// <summary>
         /// Returns a page of rows. <paramref name="skip"/> rows are bypassed before <paramref name="take"/> are returned.
+        /// <paramref name="orderBy"/> is required — pagination over an unordered set is non-deterministic.
         /// </summary>
+        /// <param name="orderBy">
+        /// A function that applies one or more <c>OrderBy</c> / <c>ThenBy</c> calls to the query,
+        /// e.g. <c>q =&gt; q.OrderByDescending(e =&gt; e.CreatedAt).ThenBy(e =&gt; e.Id)</c>.
+        /// </param>
         /// <param name="tracking">
         /// Controls whether returned entities are tracked by the change tracker.
         /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
         /// </param>
-        Task<IEnumerable<T>> AllAsync(int skip, int take, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
+        Task<IEnumerable<T>> AllAsync(int skip, int take, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
         /// <summary>Returns all entities that satisfy <paramref name="predicate"/>.</summary>
         /// <param name="tracking">
@@ -61,12 +66,19 @@ namespace GenericRepositories.Interfaces
         /// </param>
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
-        /// <summary>Returns the first entity that satisfies <paramref name="predicate"/>, or <see langword="null"/> if none match.</summary>
+        /// <summary>
+        /// Returns the first entity that satisfies <paramref name="predicate"/> in the order defined by
+        /// <paramref name="orderBy"/>, or <see langword="null"/> if none match.
+        /// </summary>
+        /// <param name="orderBy">
+        /// A function that applies one or more <c>OrderBy</c> / <c>ThenBy</c> calls to the query,
+        /// e.g. <c>q =&gt; q.OrderByDescending(e =&gt; e.CreatedAt).ThenBy(e =&gt; e.Id)</c>.
+        /// </param>
         /// <param name="tracking">
         /// Controls whether the returned entity is tracked by the change tracker.
         /// Defaults to <see cref="QueryTrackingBehavior.NoTracking"/>.
         /// </param>
-        Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
+        Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.NoTracking, CancellationToken ct = default);
 
         /// <summary>Flushes all pending changes to the database.</summary>
         /// <returns>The number of rows written.</returns>
