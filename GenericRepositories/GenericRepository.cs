@@ -1,98 +1,116 @@
-﻿using GenericRepositories.Interfaces;
+using GenericRepositories.Interfaces;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace GenericRepositories
 {
-    abstract class GenericRepository<T,U> : IGenericRepository<T,U>
+    public abstract class GenericRepository<T, U> : IGenericRepository<T, U>
         where T : class
         where U : DbContext
     {
-        protected U _context;
-        protected ILogger<GenericRepository<T,U>> _logger;
+        protected readonly U _context;
+        protected readonly ILogger<GenericRepository<T, U>> _logger;
         private bool disposedValue;
 
-        protected GenericRepository(U context, ILogger<GenericRepository<T,U>> logger)
+        protected GenericRepository(U context, ILogger<GenericRepository<T, U>> logger)
         {
             _context = context;
             _logger = logger;
         }
-        public virtual async Task<T> AddAsync(T entity)
+
+        public virtual async Task<T> AddAsync(T entity, CancellationToken ct = default)
         {
             try
             {
-                EntityEntry<T> addedEntity = await _context.AddAsync(entity);
+                var addedEntity = await _context.Set<T>().AddAsync(entity, ct);
                 return addedEntity.Entity;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(AddAsync));
                 throw;
             }
-
         }
-        public virtual async Task<IEnumerable<T>> AllAsync()
+
+        public virtual async Task<IEnumerable<T>> AllAsync(CancellationToken ct = default)
         {
             try
             {
-                IQueryable<T> query = _context.Set<T>().AsQueryable();
-                return await query.ToListAsync();
+                return await _context.Set<T>().ToListAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(AllAsync));
                 throw;
             }
-
         }
-        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+
+        public virtual async Task<IEnumerable<T>> AllAsync(int skip, int take, CancellationToken ct = default)
         {
             try
             {
-                IQueryable<T> query = _context.Set<T>().AsQueryable();
-                query = query.Where(predicate);
-
-                return await query.ToListAsync();
+                return await _context.Set<T>().Skip(skip).Take(take).ToListAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(AllAsync));
                 throw;
             }
-
         }
-        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate)
-        {
 
-            return (await FindAsync(predicate)).FirstOrDefault();
-        }
-        public virtual async Task<T?> GetAsync(Guid id)
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
         {
             try
             {
-                return await _context.FindAsync<T>(id);
+                return await _context.Set<T>().Where(predicate).ToListAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(FindAsync));
                 throw;
             }
         }
-        public virtual async Task<int> SaveChangesAsync()
+
+        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
         {
             try
             {
-                return await _context.SaveChangesAsync();
+                return await _context.Set<T>().Where(predicate).FirstOrDefaultAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(FindFirstAsync));
                 throw;
             }
-
         }
+
+        public virtual async Task<T?> GetAsync(Guid id, CancellationToken ct = default)
+        {
+            try
+            {
+                return await _context.FindAsync<T>(new object[] { id }, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in {Method}", nameof(GetAsync));
+                throw;
+            }
+        }
+
+        public virtual async Task<int> SaveChangesAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                return await _context.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in {Method}", nameof(SaveChangesAsync));
+                throw;
+            }
+        }
+
         public virtual T Update(T entity)
         {
             try
@@ -101,11 +119,11 @@ namespace GenericRepositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(Update));
                 throw;
             }
-
         }
+
         public virtual T Delete(T entity)
         {
             try
@@ -114,7 +132,7 @@ namespace GenericRepositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(Delete));
                 throw;
             }
         }
@@ -125,26 +143,14 @@ namespace GenericRepositories
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects)
                     _context.Dispose();
                 }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
                 disposedValue = true;
             }
         }
 
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~GenericRepository()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
-
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
