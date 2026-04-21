@@ -65,9 +65,7 @@ namespace GenericRepositories
         {
             try
             {
-                return await _context.Set<T>()
-                    .WithQueryTrackingBehavior(tracking)
-                    .ToListAsync(ct);
+                return await ApplyTracking(_context.Set<T>(), tracking).ToListAsync(ct);
             }
             catch (Exception ex)
             {
@@ -81,11 +79,7 @@ namespace GenericRepositories
         {
             try
             {
-                return await _context.Set<T>()
-                    .WithQueryTrackingBehavior(tracking)
-                    .Skip(skip)
-                    .Take(take)
-                    .ToListAsync(ct);
+                return await ApplyTracking(_context.Set<T>(), tracking).Skip(skip).Take(take).ToListAsync(ct);
             }
             catch (Exception ex)
             {
@@ -99,10 +93,7 @@ namespace GenericRepositories
         {
             try
             {
-                return await _context.Set<T>()
-                    .WithQueryTrackingBehavior(tracking)
-                    .Where(predicate)
-                    .ToListAsync(ct);
+                return await ApplyTracking(_context.Set<T>(), tracking).Where(predicate).ToListAsync(ct);
             }
             catch (Exception ex)
             {
@@ -116,10 +107,7 @@ namespace GenericRepositories
         {
             try
             {
-                return await _context.Set<T>()
-                    .WithQueryTrackingBehavior(tracking)
-                    .Where(predicate)
-                    .FirstOrDefaultAsync(ct);
+                return await ApplyTracking(_context.Set<T>(), tracking).Where(predicate).FirstOrDefaultAsync(ct);
             }
             catch (Exception ex)
             {
@@ -127,6 +115,13 @@ namespace GenericRepositories
                 throw;
             }
         }
+
+        private static IQueryable<T> ApplyTracking(IQueryable<T> query, QueryTrackingBehavior tracking) => tracking switch
+        {
+            QueryTrackingBehavior.NoTracking                    => query.AsNoTracking(),
+            QueryTrackingBehavior.NoTrackingWithIdentityResolution => query.AsNoTrackingWithIdentityResolution(),
+            _                                                   => query.AsTracking()
+        };
 
         /// <inheritdoc/>
         public virtual async Task<T?> GetAsync(TKey id, CancellationToken ct = default)
