@@ -1,98 +1,157 @@
-﻿using GenericRepositories.Interfaces;
+using GenericRepositories.Interfaces;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace GenericRepositories
 {
-    abstract class GenericRepository<T,U> : IGenericRepository<T,U>
+    /// <summary>
+    /// Abstract base class that implements <see cref="IGenericRepository{T,U,TKey}"/> using EF Core.
+    /// Subclass once per entity and inject the concrete <typeparamref name="U"/> context.
+    /// </summary>
+    /// <typeparam name="T">The entity type.</typeparam>
+    /// <typeparam name="U">The <see cref="DbContext"/> type that owns the entity set.</typeparam>
+    /// <typeparam name="TKey">
+    /// The primary-key type (e.g. <see cref="int"/> or <see cref="Guid"/>).
+    /// Must be non-nullable.
+    /// </typeparam>
+    /// <example>
+    /// <code>
+    /// public class OrderRepository : GenericRepository&lt;Order, AppDbContext, int&gt;
+    /// {
+    ///     public OrderRepository(AppDbContext context, ILogger&lt;GenericRepository&lt;Order, AppDbContext, int&gt;&gt; logger)
+    ///         : base(context, logger) { }
+    /// }
+    /// </code>
+    /// </example>
+    public abstract class GenericRepository<T, U, TKey> : IGenericRepository<T, U, TKey>
         where T : class
         where U : DbContext
+        where TKey : notnull
     {
-        protected U _context;
-        protected ILogger<GenericRepository<T,U>> _logger;
+        /// <summary>The EF Core context used by this repository.</summary>
+        protected readonly U _context;
+
+        /// <summary>Logger scoped to this repository type.</summary>
+        protected readonly ILogger<GenericRepository<T, U, TKey>> _logger;
+
         private bool disposedValue;
 
-        protected GenericRepository(U context, ILogger<GenericRepository<T,U>> logger)
+        /// <param name="context">The EF Core context to use for all data access.</param>
+        /// <param name="logger">Logger provided by the DI container.</param>
+        protected GenericRepository(U context, ILogger<GenericRepository<T, U, TKey>> logger)
         {
             _context = context;
             _logger = logger;
         }
-        public virtual async Task<T> AddAsync(T entity)
+
+        /// <inheritdoc/>
+        public virtual async Task<T> AddAsync(T entity, CancellationToken ct = default)
         {
             try
             {
-                EntityEntry<T> addedEntity = await _context.AddAsync(entity);
+                var addedEntity = await _context.Set<T>().AddAsync(entity, ct);
                 return addedEntity.Entity;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(AddAsync));
                 throw;
             }
-
         }
-        public virtual async Task<IEnumerable<T>> AllAsync()
+
+        /// <inheritdoc/>
+        public virtual async Task<IEnumerable<T>> AllAsync(QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
-                IQueryable<T> query = _context.Set<T>().AsQueryable();
-                return await query.ToListAsync();
+                return await ApplyTracking(_context.Set<T>(), tracking).ToListAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(AllAsync));
                 throw;
             }
-
         }
-        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+
+        /// <inheritdoc/>
+        public virtual async Task<IEnumerable<T>> AllAsync(int skip, int take, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
-                IQueryable<T> query = _context.Set<T>().AsQueryable();
-                query = query.Where(predicate);
-
-                return await query.ToListAsync();
+                return await orderBy(ApplyTracking(_context.Set<T>(), tracking)).Skip(skip).Take(take).ToListAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(AllAsync));
                 throw;
             }
-
         }
-        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate)
-        {
 
-            return (await FindAsync(predicate)).FirstOrDefault();
-        }
-        public virtual async Task<T?> GetAsync(Guid id)
+        /// <inheritdoc/>
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
-                return await _context.FindAsync<T>(id);
+                return await ApplyTracking(_context.Set<T>(), tracking).Where(predicate).ToListAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(FindAsync));
                 throw;
             }
         }
-        public virtual async Task<int> SaveChangesAsync()
+
+        /// <inheritdoc/>
+        public virtual async Task<T?> FindFirstAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy, QueryTrackingBehavior tracking = QueryTrackingBehavior.TrackAll, CancellationToken ct = default)
         {
             try
             {
-                return await _context.SaveChangesAsync();
+                return await orderBy(ApplyTracking(_context.Set<T>(), tracking).Where(predicate)).FirstOrDefaultAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(FindFirstAsync));
                 throw;
             }
-
         }
+
+        private static IQueryable<T> ApplyTracking(IQueryable<T> query, QueryTrackingBehavior tracking) => tracking switch
+        {
+            QueryTrackingBehavior.NoTracking                    => query.AsNoTracking(),
+            QueryTrackingBehavior.NoTrackingWithIdentityResolution => query.AsNoTrackingWithIdentityResolution(),
+            _                                                   => query.AsTracking()
+        };
+
+        /// <inheritdoc/>
+        public virtual async Task<T?> GetAsync(TKey id, CancellationToken ct = default)
+        {
+            try
+            {
+                return await _context.FindAsync<T>(new object[] { id }, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in {Method}", nameof(GetAsync));
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public virtual async Task<int> SaveChangesAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                return await _context.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in {Method}", nameof(SaveChangesAsync));
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
         public virtual T Update(T entity)
         {
             try
@@ -101,11 +160,12 @@ namespace GenericRepositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(Update));
                 throw;
             }
-
         }
+
+        /// <inheritdoc/>
         public virtual T Delete(T entity)
         {
             try
@@ -114,37 +174,29 @@ namespace GenericRepositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "Error in {Method}", nameof(Delete));
                 throw;
             }
         }
 
+        /// <summary>
+        /// Disposes the underlying <see cref="DbContext"/> when <paramref name="disposing"/> is <see langword="true"/>.
+        /// </summary>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects)
                     _context.Dispose();
                 }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
                 disposedValue = true;
             }
         }
 
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~GenericRepository()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
-
+        /// <inheritdoc/>
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
